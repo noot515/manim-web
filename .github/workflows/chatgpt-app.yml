@@ -1,0 +1,35 @@
+name: ChatGPT MCP App
+
+on:
+  push:
+    paths:
+      - "apps/chatgpt/**"
+      - ".github/workflows/chatgpt-app.yml"
+  pull_request:
+    paths:
+      - "apps/chatgpt/**"
+      - ".github/workflows/chatgpt-app.yml"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Manim Web library dependencies
+        run: npm ci
+      - name: Install ChatGPT app dependencies
+        working-directory: apps/chatgpt
+        run: npm install --no-audit --no-fund
+      - name: Build bundled HTML widget
+        working-directory: apps/chatgpt
+        run: npm run build
+      - name: Test declarative scenes and HTTP MCP integration
+        working-directory: apps/chatgpt
+        run: npm test
+      - name: Check embedded widget HTML
+        run: |
+          node -e "const fs = require('node:fs'); const h = fs.readFileSync('apps/chatgpt/dist/mcp-app.html','utf8'); if (!h.includes('<html') || !h.includes('script')) process.exit(1);"
